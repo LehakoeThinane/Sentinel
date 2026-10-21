@@ -1,0 +1,5 @@
+# Developer and CI tooling (Python 3.12). Keep ruff in step with the
+# ruff-pre-commit rev in .pre-commit-config.yaml.
+ruff==0.17.1
+pytest==9.1.1
+pre-commit==4.7.0
