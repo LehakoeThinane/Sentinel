@@ -1,0 +1,16 @@
+{
+  "event_id": "0192f3b1-5c30-7000-8000-0000000000a2",
+  "event_type": "PaymentRequested",
+  "schema_version": 1,
+  "occurred_at": "2026-10-21T09:30:00Z",
+  "aggregate_id": "0192f3b1-5c2e-7d10-9f00-3a2b1c4d5e6f",
+  "correlation_id": "req-7f3a9c1e",
+  "payload": {
+    "payer_account_id": "0192f3a4-0000-7000-8000-000000000001",
+    "payee_account_id": "0192f3a4-0000-7000-8000-000000000900",
+    "amount_minor": 0,
+    "currency": "ZAR",
+    "channel": "app",
+    "device_id": "dev-7781"
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/envelope.v1.schema.json",
+  "title": "Event envelope",
+  "description": "Every event on every topic uses this envelope. The Kafka message key is aggregate_id, so all events for one aggregate stay in order. Delivery is at-least-once: consumers deduplicate by event_id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "event_type", "schema_version", "occurred_at", "aggregate_id", "correlation_id", "payload"],
+  "properties": {
+    "event_id": {
+      "$ref": "common.v1.schema.json#/$defs/uuid",
+      "description": "Unique per event (UUIDv7); the deduplication key for consumers."
+    },
+    "event_type": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Za-z]+$"
+    },
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC time the fact happened."
+    },
+    "aggregate_id": {
+      "$ref": "common.v1.schema.json#/$defs/uuid",
+      "description": "Id of the entity the event is about (payment_id for payment and ledger events, case_id for case events)."
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "description": "Ties together every log, event and trace caused by one request."
+    },
+    "payload": {
+      "type": "object"
+    }
+  }
+}

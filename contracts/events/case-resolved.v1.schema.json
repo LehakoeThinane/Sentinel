@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/case-resolved.v1.schema.json",
+  "title": "CaseResolved",
+  "description": "Topic cases.events. Produced by the Case service when an analyst decides a case. Only people decide cases; the AI assistant never produces this event. aggregate_id is the case_id.",
+  "$ref": "envelope.v1.schema.json",
+  "properties": {
+    "event_type": { "const": "CaseResolved" },
+    "schema_version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "payment_id", "decision", "analyst_id", "reason"],
+      "properties": {
+        "case_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "payment_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "decision": { "enum": ["approve", "decline"] },
+        "analyst_id": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      }
+    }
+  }
+}

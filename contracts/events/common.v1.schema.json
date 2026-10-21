@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/common.v1.schema.json",
+  "title": "Shared definitions for Sentinel events",
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "description": "ISO 4217 alphabetic code."
+    },
+    "amount_minor": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991,
+      "description": "Amount in minor units (cents). Never fractional; capped at 2^53 - 1 for JSON safety."
+    },
+    "risk_score": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "reasons": {
+      "type": "array",
+      "maxItems": 3,
+      "description": "Top features behind a score, largest contribution first.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["feature", "contribution"],
+        "properties": {
+          "feature": { "type": "string", "minLength": 1 },
+          "contribution": { "type": "number" }
+        }
+      }
+    }
+  }
+}

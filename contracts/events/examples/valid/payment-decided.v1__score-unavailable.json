@@ -1,0 +1,19 @@
+{
+  "event_id": "0192f3b1-5c33-7000-8000-000000000005",
+  "event_type": "PaymentDecided",
+  "schema_version": 1,
+  "occurred_at": "2026-10-21T09:31:00Z",
+  "aggregate_id": "0192f3b1-6d3f-7e20-8a00-4b3c2d1e0f70",
+  "correlation_id": "req-81bd22aa",
+  "payload": {
+    "decision": "hold",
+    "payer_account_id": "0192f3a4-0000-7000-8000-000000000003",
+    "payee_account_id": "0192f3a4-0000-7000-8000-000000000900",
+    "amount_minor": 1500000,
+    "currency": "ZAR",
+    "risk_score": null,
+    "model_version": null,
+    "reasons": [],
+    "score_unavailable": true
+  }
+}

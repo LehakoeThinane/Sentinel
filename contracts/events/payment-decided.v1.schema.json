@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/payment-decided.v1.schema.json",
+  "title": "PaymentDecided",
+  "description": "Topic payments.events. Produced by the Payments API through the outbox, in the same transaction as the decision. Carries everything the Ledger needs to post an approved payment. aggregate_id is the payment_id.",
+  "$ref": "envelope.v1.schema.json",
+  "properties": {
+    "event_type": { "const": "PaymentDecided" },
+    "schema_version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["decision", "payer_account_id", "payee_account_id", "amount_minor", "currency", "risk_score", "model_version", "reasons", "score_unavailable"],
+      "properties": {
+        "decision": { "enum": ["approve", "hold", "decline"] },
+        "payer_account_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "payee_account_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "amount_minor": { "$ref": "common.v1.schema.json#/$defs/amount_minor" },
+        "currency": { "$ref": "common.v1.schema.json#/$defs/currency" },
+        "risk_score": {
+          "oneOf": [{ "$ref": "common.v1.schema.json#/$defs/risk_score" }, { "type": "null" }],
+          "description": "Null when no score was available."
+        },
+        "model_version": { "type": ["string", "null"] },
+        "reasons": { "$ref": "common.v1.schema.json#/$defs/reasons" },
+        "score_unavailable": {
+          "type": "boolean",
+          "description": "True when the decision was made by the scorer-outage fallback."
+        }
+      }
+    }
+  }
+}

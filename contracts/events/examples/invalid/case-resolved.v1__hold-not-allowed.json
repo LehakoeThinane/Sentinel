@@ -1,0 +1,15 @@
+{
+  "event_id": "0192f3b1-5c36-7000-8000-0000000000aa",
+  "event_type": "CaseResolved",
+  "schema_version": 1,
+  "occurred_at": "2026-10-21T10:05:00Z",
+  "aggregate_id": "0192f3c0-0000-7000-8000-0000000000c1",
+  "correlation_id": "req-91aa0b3c",
+  "payload": {
+    "case_id": "0192f3c0-0000-7000-8000-0000000000c1",
+    "payment_id": "0192f3b1-7e40-7f30-8b00-5c4d3e2f1a81",
+    "decision": "hold",
+    "analyst_id": "analyst-007",
+    "reason": "Needs more information."
+  }
+}

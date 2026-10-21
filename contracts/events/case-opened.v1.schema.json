@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/case-opened.v1.schema.json",
+  "title": "CaseOpened",
+  "description": "Topic cases.events. Produced by the Case service when a held payment gets a review case. aggregate_id is the case_id.",
+  "$ref": "envelope.v1.schema.json",
+  "properties": {
+    "event_type": { "const": "CaseOpened" },
+    "schema_version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "payment_id", "risk_score", "reasons"],
+      "properties": {
+        "case_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "payment_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "risk_score": {
+          "oneOf": [{ "$ref": "common.v1.schema.json#/$defs/risk_score" }, { "type": "null" }]
+        },
+        "reasons": { "$ref": "common.v1.schema.json#/$defs/reasons" }
+      }
+    }
+  }
+}
