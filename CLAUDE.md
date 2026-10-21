@@ -16,8 +16,9 @@
   messages, the README or any committed file.
 
 ## How to work
-- Read planning/prd.md, planning/lld.md and planning/adr/ before
-  changing a module, plus the current phase pack in planning/phase-packs/.
+- Read planning/phase-packs/phase-0-foundations.md (PRD, HLD, LLD) and
+  planning/adr/ before changing a module, plus the current phase pack in
+  planning/phase-packs/.
 - Plan first for anything touching the ledger, payments or contracts.
 - Write or update tests in the same change. Ledger changes need an
   invariant test (balances, no double posting).
