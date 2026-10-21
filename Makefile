@@ -6,13 +6,18 @@
 COMPOSE := docker compose -f infra/local/docker-compose.yml $(if $(wildcard .env),--env-file .env)
 PY_DIRS := contracts services/scoring services/cases-assistant ml
 
-.PHONY: test lint format up down
+.PHONY: test e2e lint format up down
 
 test:
 	bash tests/guardrails/test-guard.sh
+	bash tests/guardrails/test-post-edit.sh
 	dotnet test Sentinel.sln
 	@# pytest exits 5 when it collects no tests; allowed until every package has tests.
 	pytest $(PY_DIRS) -q; rc=$$?; [ $$rc -eq 0 ] || [ $$rc -eq 5 ]
+
+# Needs the stack: make up
+e2e:
+	pytest tests/e2e -q
 
 lint:
 	ruff check .

@@ -1,0 +1,4 @@
+*
+!requirements.txt
+!scoring/
+**/__pycache__/

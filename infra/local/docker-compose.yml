@@ -51,8 +51,10 @@ services:
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       # PLAINTEXT for containers on the compose network, EXTERNAL for the host.
+      # 127.0.0.1, not localhost: on Windows localhost resolves to ::1 first, and
+      # the port is published on IPv4 only, so clients stall on every reconnect.
       KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:19092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:19092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://127.0.0.1:19092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
@@ -98,6 +100,43 @@ services:
       test: ["CMD", "test", "-f", "/tmp/topics-ready"]
       interval: 2s
       timeout: 2s
+      retries: 60
+      start_period: 5s
+
+  payments-api:
+    build:
+      context: ../..
+      dockerfile: services/payments-api/Dockerfile
+    environment:
+      Kafka__BootstrapServers: kafka:9092
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      kafka-init:
+        condition: service_healthy
+    healthcheck:
+      # The runtime image has no curl; bash's /dev/tcp is enough for one request.
+      # Ready means the PaymentScored consumer has its partitions.
+      test: ["CMD", "bash", "-c", 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /health/ready HTTP/1.0\r\n\r\n" >&3 && head -n1 <&3 | grep -q " 200 "']
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 5s
+
+  scoring:
+    build:
+      context: ../../services/scoring
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "127.0.0.1:8000:8000"
+    depends_on:
+      kafka-init:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
+      interval: 2s
+      timeout: 3s
       retries: 60
       start_period: 5s
 
