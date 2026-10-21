@@ -1,0 +1,10 @@
+# Allow-list for builds that use the repository root as context. Everything is
+# excluded unless listed, so planning/, .git, .env files and local caches never
+# reach an image.
+*
+!global.json
+!Directory.Build.props
+!.editorconfig
+!services/payments-api/src/
+**/bin/
+**/obj/
