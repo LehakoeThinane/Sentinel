@@ -1,0 +1,18 @@
+{
+  "event_id": "0192f3b1-5c35-7000-8000-000000000007",
+  "event_type": "CaseOpened",
+  "schema_version": 1,
+  "occurred_at": "2026-10-21T09:32:00Z",
+  "aggregate_id": "0192f3c0-0000-7000-8000-0000000000c1",
+  "correlation_id": "req-91aa0b3c",
+  "payload": {
+    "case_id": "0192f3c0-0000-7000-8000-0000000000c1",
+    "payment_id": "0192f3b1-7e40-7f30-8b00-5c4d3e2f1a81",
+    "risk_score": 0.71,
+    "reasons": [
+      { "feature": "payments_last_10m", "contribution": 0.31 },
+      { "feature": "new_payee", "contribution": 0.18 },
+      { "feature": "new_device", "contribution": 0.09 }
+    ]
+  }
+}

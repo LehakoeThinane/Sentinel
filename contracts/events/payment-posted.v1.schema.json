@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/payment-posted.v1.schema.json",
+  "title": "PaymentPosted",
+  "description": "Topic ledger.events. Produced by the Ledger after a payment's balanced transaction commits. aggregate_id is the payment_id.",
+  "$ref": "envelope.v1.schema.json",
+  "properties": {
+    "event_type": { "const": "PaymentPosted" },
+    "schema_version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transaction_id", "currency", "entries"],
+      "properties": {
+        "transaction_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "currency": { "$ref": "common.v1.schema.json#/$defs/currency" },
+        "entries": {
+          "type": "array",
+          "minItems": 2,
+          "description": "Summary of the posted lines. Debits equal credits; the schema checks shape, the ledger enforces balance.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["account_id", "direction", "amount_minor"],
+            "properties": {
+              "account_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+              "direction": { "enum": ["D", "C"] },
+              "amount_minor": { "$ref": "common.v1.schema.json#/$defs/amount_minor" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

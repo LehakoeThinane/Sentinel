@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/payment-scored.v1.schema.json",
+  "title": "PaymentScored (walking skeleton only)",
+  "description": "Topic payments.events. Exists only for the walking skeleton, which proves the event round trip. It is removed when scoring becomes a synchronous call from the Payments API. aggregate_id is the payment_id.",
+  "$ref": "envelope.v1.schema.json",
+  "properties": {
+    "event_type": { "const": "PaymentScored" },
+    "schema_version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["risk_score", "model_version"],
+      "properties": {
+        "risk_score": { "$ref": "common.v1.schema.json#/$defs/risk_score" },
+        "model_version": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

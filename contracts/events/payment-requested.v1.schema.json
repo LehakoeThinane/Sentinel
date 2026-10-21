@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sentinel.example/schemas/events/payment-requested.v1.schema.json",
+  "title": "PaymentRequested",
+  "description": "Topic payments.events. Produced by the Payments API when a payment request is accepted. aggregate_id is the payment_id.",
+  "$ref": "envelope.v1.schema.json",
+  "properties": {
+    "event_type": { "const": "PaymentRequested" },
+    "schema_version": { "const": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["payer_account_id", "payee_account_id", "amount_minor", "currency", "channel", "device_id"],
+      "properties": {
+        "payer_account_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "payee_account_id": { "$ref": "common.v1.schema.json#/$defs/uuid" },
+        "amount_minor": { "$ref": "common.v1.schema.json#/$defs/amount_minor" },
+        "currency": { "$ref": "common.v1.schema.json#/$defs/currency" },
+        "channel": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "device_id": { "type": ["string", "null"], "maxLength": 128 }
+      }
+    }
+  }
+}

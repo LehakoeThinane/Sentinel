@@ -1,0 +1,12 @@
+{
+  "event_id": "0192f3b1-5c31-7000-8000-000000000003",
+  "event_type": "PaymentScored",
+  "schema_version": 1,
+  "occurred_at": "2026-10-21T09:30:00.120Z",
+  "aggregate_id": "0192f3b1-5c2e-7d10-9f00-3a2b1c4d5e6f",
+  "correlation_id": "req-7f3a9c1e",
+  "payload": {
+    "risk_score": 0.01,
+    "model_version": "skeleton"
+  }
+}

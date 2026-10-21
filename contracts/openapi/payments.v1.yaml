@@ -1,0 +1,368 @@
+openapi: 3.1.0
+info:
+  title: Sentinel Payments API
+  version: 1.0.0-v0
+  description: |
+    Accepts payment requests and reports their state.
+
+    Amounts are integers in minor units (cents) with an ISO 4217 currency code;
+    they are never fractional. Every `POST /v1/payments` must carry an
+    `Idempotency-Key`: a retry with the same key and body returns the original
+    response, and the same key with a different body is rejected with 422.
+
+    A payment that cannot be funded is a business outcome, not an error: it is
+    returned with HTTP 201 and `state: Declined`. Clients must check `state`.
+
+    Errors use RFC 9457 problem details (`application/problem+json`) with a
+    machine-readable `code` extension member.
+servers:
+  - url: http://localhost:8080
+    description: Local docker-compose stack
+
+tags:
+  - name: payments
+
+paths:
+  /v1/payments:
+    post:
+      tags: [payments]
+      operationId: createPayment
+      summary: Create a payment
+      description: |
+        Idempotent per (`X-Client-Id`, `Idempotency-Key`). Final outcomes,
+        including declines and account errors, are stored and replayed for
+        retries with the same key. Transient failures (503) are not stored, so a
+        retry with the same key resumes processing.
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CorrelationIdRequest'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+            examples:
+              card-payment:
+                value:
+                  payer_account_id: 0192f3a4-0000-7000-8000-000000000001
+                  payee_account_id: 0192f3a4-0000-7000-8000-000000000900
+                  amount_minor: 25000
+                  currency: ZAR
+                  channel: app
+                  device_id: dev-7781
+      responses:
+        '201':
+          description: |
+            Payment processed. Check `state`: `Posted` on success, `Declined`
+            with a `decline_reason` for a business decline. A replay of a
+            completed key returns the original body.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+              examples:
+                posted:
+                  value:
+                    payment_id: 0192f3b1-5c2e-7d10-9f00-3a2b1c4d5e6f
+                    state: Posted
+                    payer_account_id: 0192f3a4-0000-7000-8000-000000000001
+                    payee_account_id: 0192f3a4-0000-7000-8000-000000000900
+                    amount_minor: 25000
+                    currency: ZAR
+                    ledger_transaction_id: 0192f3b1-5c2f-7a00-8b00-112233445566
+                    decline_reason: null
+                    risk_score: null
+                    decision: null
+                    model_version: null
+                    created_at: '2026-10-21T09:30:00Z'
+                declined:
+                  value:
+                    payment_id: 0192f3b1-6d3f-7e20-8a00-4b3c2d1e0f70
+                    state: Declined
+                    payer_account_id: 0192f3a4-0000-7000-8000-000000000001
+                    payee_account_id: 0192f3a4-0000-7000-8000-000000000900
+                    amount_minor: 990000
+                    currency: ZAR
+                    ledger_transaction_id: null
+                    decline_reason: insufficient_funds
+                    risk_score: null
+                    decision: null
+                    model_version: null
+                    created_at: '2026-10-21T09:31:00Z'
+        '400':
+          description: |
+            `validation_failed`, `client_id_missing` or `idempotency_key_missing`.
+            Rejected before the idempotency key is claimed; not stored.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                key-missing:
+                  value:
+                    type: https://sentinel.example/problems/idempotency-key-missing
+                    title: Idempotency-Key header is required
+                    status: 400
+                    detail: POST /v1/payments requires an Idempotency-Key header.
+                    code: idempotency_key_missing
+        '404':
+          description: '`account_not_found`: payer or payee unknown. Stored and replayed.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '409':
+          description: |
+            `idempotency_in_progress`: the same key is still being processed
+            within its lease. Retry after a short delay. Not stored.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying.
+              schema:
+                type: integer
+                minimum: 1
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '422':
+          description: |
+            `idempotency_key_reused` (same key, different body; not stored),
+            `account_closed` or `currency_mismatch` (stored and replayed).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              examples:
+                key-reused:
+                  value:
+                    type: https://sentinel.example/problems/idempotency-key-reused
+                    title: Idempotency key reused with a different request
+                    status: 422
+                    detail: The key was first used with a different body.
+                    code: idempotency_key_reused
+        '503':
+          description: |
+            `ledger_unavailable` or `ledger_lock_timeout`. Transient: not stored,
+            the lease is released, and a retry with the same key resumes.
+          headers:
+            Retry-After:
+              description: Seconds to wait before retrying.
+              schema:
+                type: integer
+                minimum: 1
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /v1/payments/{payment_id}:
+    get:
+      tags: [payments]
+      operationId: getPayment
+      summary: Get a payment with its state, score and decision
+      parameters:
+        - name: payment_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/CorrelationIdRequest'
+      responses:
+        '200':
+          description: The payment.
+          headers:
+            X-Correlation-Id:
+              $ref: '#/components/headers/CorrelationId'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          description: '`payment_not_found`.'
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  parameters:
+    ClientId:
+      name: X-Client-Id
+      in: header
+      required: true
+      description: Identifies the calling client; idempotency keys are scoped to it.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Client-chosen key, unique per logical payment. Kept for 24 hours.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 255
+    CorrelationIdRequest:
+      name: X-Correlation-Id
+      in: header
+      required: false
+      description: |
+        Optional id tying together logs, events and traces for this request.
+        Generated by the API when absent, and always echoed in the response.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+
+  headers:
+    CorrelationId:
+      description: The correlation id used for this request.
+      schema:
+        type: string
+
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+    Currency:
+      type: string
+      pattern: '^[A-Z]{3}$'
+      description: ISO 4217 alphabetic code.
+      examples: [ZAR, USD]
+    AmountMinor:
+      type: integer
+      format: int64
+      minimum: 1
+      maximum: 9007199254740991
+      description: |
+        Amount in minor units (e.g. cents). Capped at 2^53 - 1 so it survives
+        JSON parsers that use IEEE-754 doubles.
+
+    CreatePaymentRequest:
+      type: object
+      additionalProperties: false
+      required: [payer_account_id, payee_account_id, amount_minor, currency, channel]
+      properties:
+        payer_account_id:
+          $ref: '#/components/schemas/Uuid'
+        payee_account_id:
+          $ref: '#/components/schemas/Uuid'
+        amount_minor:
+          $ref: '#/components/schemas/AmountMinor'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        channel:
+          type: string
+          minLength: 1
+          maxLength: 32
+          description: Where the payment was initiated, e.g. app, web, pos.
+        device_id:
+          type: [string, 'null']
+          maxLength: 128
+
+    PaymentState:
+      type: string
+      enum: [Requested, Scored, Approved, Held, Declined, Posted]
+
+    Payment:
+      type: object
+      additionalProperties: false
+      required:
+        - payment_id
+        - state
+        - payer_account_id
+        - payee_account_id
+        - amount_minor
+        - currency
+        - ledger_transaction_id
+        - decline_reason
+        - risk_score
+        - decision
+        - model_version
+        - created_at
+      properties:
+        payment_id:
+          $ref: '#/components/schemas/Uuid'
+        state:
+          $ref: '#/components/schemas/PaymentState'
+        payer_account_id:
+          $ref: '#/components/schemas/Uuid'
+        payee_account_id:
+          $ref: '#/components/schemas/Uuid'
+        amount_minor:
+          $ref: '#/components/schemas/AmountMinor'
+        currency:
+          $ref: '#/components/schemas/Currency'
+        ledger_transaction_id:
+          type: [string, 'null']
+          format: uuid
+          description: Set once the payment is posted to the ledger.
+        decline_reason:
+          type: [string, 'null']
+          description: Set when `state` is `Declined`, e.g. insufficient_funds.
+        risk_score:
+          type: [number, 'null']
+          minimum: 0
+          maximum: 1
+          description: Fraud probability; null until scoring is enabled.
+        decision:
+          type: [string, 'null']
+          enum: [approve, hold, decline, null]
+        model_version:
+          type: [string, 'null']
+        created_at:
+          type: string
+          format: date-time
+
+    Problem:
+      type: object
+      description: RFC 9457 problem details with a `code` extension member.
+      required: [type, title, status, code]
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          minimum: 400
+          maximum: 599
+        detail:
+          type: string
+        instance:
+          type: string
+        code:
+          type: string
+          enum:
+            - validation_failed
+            - client_id_missing
+            - idempotency_key_missing
+            - idempotency_in_progress
+            - idempotency_key_reused
+            - account_not_found
+            - account_closed
+            - currency_mismatch
+            - ledger_unavailable
+            - ledger_lock_timeout
+            - payment_not_found
+        errors:
+          type: array
+          description: Field-level details for `validation_failed`.
+          items:
+            type: object
+            required: [field, message]
+            properties:
+              field:
+                type: string
+              message:
+                type: string
