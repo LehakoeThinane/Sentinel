@@ -1,0 +1,103 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet: ${{ steps.filter.outputs.dotnet }}
+      python: ${{ steps.filter.outputs.python }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            dotnet:
+              - 'services/payments-api/**'
+              - 'services/ledger/**'
+              - 'services/reconciliation/**'
+              - 'contracts/**'
+            python:
+              - 'services/scoring/**'
+              - 'services/cases-assistant/**'
+              - 'ml/**'
+              - 'contracts/**'
+
+  privacy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block private planning files
+        run: |
+          if git ls-files | grep -q '^planning/'; then
+            echo "planning/ files found in the repository"; exit 1
+          fi
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dotnet:
+    needs: changes
+    if: needs.changes.outputs.dotnet == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet restore Sentinel.sln
+      - run: dotnet format Sentinel.sln --verify-no-changes
+      - run: dotnet build Sentinel.sln --no-restore -c Release
+      - run: dotnet test Sentinel.sln --no-build -c Release
+
+  python:
+    needs: changes
+    if: needs.changes.outputs.python == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements-dev.txt
+      - run: ruff check .
+      - run: ruff format --check .
+      # contracts/ holds the schema and OpenAPI validation tests.
+      - run: pytest contracts services/scoring services/cases-assistant ml -q
+
+  e2e:
+    needs: [dotnet, python]
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r tests/e2e/requirements.txt
+      - run: docker compose -f infra/local/docker-compose.yml up -d --build --wait
+      - run: pytest tests/e2e -q
+      - if: always()
+        run: docker compose -f infra/local/docker-compose.yml logs --no-color > e2e-logs.txt
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-logs
+          path: e2e-logs.txt
+      - if: always()
+        run: docker compose -f infra/local/docker-compose.yml down -v
