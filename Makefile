@@ -1,7 +1,9 @@
 # Developer entry points. Python tools (ruff, pytest) come from the active
 # environment: `uv venv --python 3.12 && uv pip install -r requirements-dev.txt`.
 
-COMPOSE := docker compose -f infra/local/docker-compose.yml
+# Use the root .env for credentials when present; otherwise compose falls back
+# to its local-only defaults.
+COMPOSE := docker compose -f infra/local/docker-compose.yml $(if $(wildcard .env),--env-file .env)
 PY_DIRS := contracts services/scoring services/cases-assistant ml
 
 .PHONY: test lint format up down
