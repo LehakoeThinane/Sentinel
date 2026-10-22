@@ -23,6 +23,10 @@ cases=(
   # Other guard rules
   "2|git push origin main"
   "2|git push -u origin master"
+  "2|git push origin HEAD:main"
+  "2|git push origin phase1/x:main"
+  "2|git push origin refs/heads/main"
+  "2|git push origin main && echo done"
   "2|git commit --no-verify -m x"
   "2|psql -c \"DROP TABLE ledger.entries\""
   "2|psql -c \"TRUNCATE TABLE ledger.entries\""
@@ -39,6 +43,9 @@ cases=(
   "2|echo hi; head -3 .env"
   # Allowed
   "0|git push -u origin phase0/foundation"
+  "0|git push origin phase1/ledger-domain:development"
+  "0|git push origin development"
+  "0|git push origin phase1/domain-maintenance"
   "0|git push origin phase0/x --follow-tags"
   "0|git push --set-upstream origin phase0/x"
   "0|git status"

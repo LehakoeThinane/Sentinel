@@ -18,7 +18,9 @@ while IFS= read -r seg; do
     [[ "$base" =~ ^\.env(\..+)?$ && "$base" != ".env.example" ]] && block "do not read .env files"
   done
 done < <(printf '%s\n' "$cmd" | tr ';&|' '\n\n\n')
-[[ "$cmd" =~ git[[:space:]]+push.*(main|master) ]] && block "push to a branch, not main"
+# main/master only as a whole ref (origin main, HEAD:main, +main, refs/heads/main),
+# not as letters inside another branch name such as phase1/ledger-domain.
+[[ "$cmd" =~ git[[:space:]]+push([[:space:]][^\;\&\|]*)?[[:space:]:+/](main|master)([[:space:]]|$|[\;\&\|]) ]] && block "push to a branch, not main"
 
 # Force-push in any form: --force, --force-with-lease, --force-if-includes,
 # -f alone or in a short-flag cluster (-uf), or a +refspec. Each line is split
