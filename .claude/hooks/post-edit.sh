@@ -13,7 +13,10 @@ cd "$root" || exit 0
 f=$(realpath -m --relative-to="$root" "$f" 2>/dev/null || echo "$f")
 
 case "$f" in
-  *.cs) dotnet format Sentinel.sln --include "$f" >/dev/null 2>&1 ;;
+  # Whitespace only: the full `dotnet format` also applies analyzer code fixes,
+  # which can change what code means (for example adding [Obsolete]). Style and
+  # analyzer rules are still enforced by `make lint` and CI.
+  *.cs) dotnet format whitespace Sentinel.sln --include "$f" >/dev/null 2>&1 ;;
   *.py) ruff format "$f" >/dev/null 2>&1 ;;
 esac
 
