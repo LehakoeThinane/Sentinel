@@ -17,8 +17,10 @@ case "$f" in
   *.py) ruff format "$f" >/dev/null 2>&1 ;;
 esac
 
+# Flag double/float used in code. Comment lines are skipped, and "double-" is
+# ignored, so ledger vocabulary such as "double-entry" is not a false positive.
 if [[ "$f" =~ (^|/)services/(ledger|payments-api)/.*\.cs$ ]] && \
-   grep -nE '\b(double|float)\b' "$f" >&2; then
+   grep -nvE '^[[:space:]]*(//|/?\*)' "$f" | grep -E '\b(double|float)\b([^-]|$)' >&2; then
   echo "Money code must use long minor units, not double/float (ADR-005)." >&2
   exit 2
 fi

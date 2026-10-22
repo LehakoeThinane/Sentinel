@@ -28,7 +28,15 @@ cases=(
   "2|psql -c \"TRUNCATE TABLE ledger.entries\""
   "2|cat .env"
   "2|Get-Content .env"
+  "2|Get-Content -Path .env"
   "2|type .env"
+  "2|gc .env"
+  "2|cat ./infra/local/.env"
+  "2|cat \"C:\\Users\\x\\Sentinel\\.env\""
+  "2|tail -f .env.local"
+  "2|less .env.production"
+  "2|ls && cat .env"
+  "2|echo hi; head -3 .env"
   # Allowed
   "0|git push -u origin phase0/foundation"
   "0|git push origin phase0/x --follow-tags"
@@ -37,6 +45,12 @@ cases=(
   "0|git status && rm -f build.log"
   "0|git log --oneline -5"
   "0|cat .env.example"
+  "0|head -5 .env.example"
+  "0|Get-Content .env.example"
+  "0|git commit -m \"type checks keep local secrets and .env files out of images\""
+  "0|grep -n KAFKA .gitignore"
+  "0|cat README.md"
+  "0|cp .env.example .env"
   "0|dotnet test Sentinel.sln"
 )
 

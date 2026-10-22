@@ -1,0 +1,6 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Pure posting and balance rules: no I/O, no package references.
+       Target framework and analyzer settings come from Directory.Build.props. -->
+
+</Project>
