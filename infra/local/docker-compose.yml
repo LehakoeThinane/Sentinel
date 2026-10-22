@@ -14,7 +14,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-sentinel_admin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-dev-only}
       POSTGRES_DB: ${POSTGRES_DB:-sentinel}
+      PAYMENTS_OWNER_PASSWORD: ${PAYMENTS_OWNER_PASSWORD:-local-dev-only}
       PAYMENTS_SVC_PASSWORD: ${PAYMENTS_SVC_PASSWORD:-local-dev-only}
+      LEDGER_OWNER_PASSWORD: ${LEDGER_OWNER_PASSWORD:-local-dev-only}
       LEDGER_SVC_PASSWORD: ${LEDGER_SVC_PASSWORD:-local-dev-only}
       CASES_SVC_PASSWORD: ${CASES_SVC_PASSWORD:-local-dev-only}
       RECON_SVC_PASSWORD: ${RECON_SVC_PASSWORD:-local-dev-only}
