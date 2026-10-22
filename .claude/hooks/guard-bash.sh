@@ -6,7 +6,18 @@ block() { echo "Blocked by Sentinel guard: $1" >&2; exit 2; }
 
 [[ "$cmd" == *"--no-verify"* ]]      && block "do not skip pre-commit hooks"
 [[ "$cmd" =~ (DROP|TRUNCATE)[[:space:]]+(TABLE|SCHEMA) ]] && block "no destructive SQL"
-[[ "$cmd" =~ (cat|less|head|tail|type|gc|Get-Content).*\.env($|[[:space:]]) ]] && block "do not read .env files"
+# Real env files (.env, .env.local, .env.production, ...) must not be read;
+# .env.example is fine. Only a command segment that STARTS with a file reader
+# is inspected, so text such as a commit message mentioning ".env" is not blocked.
+readers='^(cat|less|more|head|tail|bat|type|gc|Get-Content|Select-String|sls)$'
+while IFS= read -r seg; do
+  read -r -a words <<< "$seg"
+  [[ ${#words[@]} -gt 0 && "${words[0]}" =~ $readers ]] || continue
+  for w in "${words[@]:1}"; do
+    w="${w//[\"\']/}"; base="${w##*[/\\]}"
+    [[ "$base" =~ ^\.env(\..+)?$ && "$base" != ".env.example" ]] && block "do not read .env files"
+  done
+done < <(printf '%s\n' "$cmd" | tr ';&|' '\n\n\n')
 [[ "$cmd" =~ git[[:space:]]+push.*(main|master) ]] && block "push to a branch, not main"
 
 # Force-push in any form: --force, --force-with-lease, --force-if-includes,
