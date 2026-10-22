@@ -38,6 +38,16 @@ printf 'namespace Payments.Api;\n\ninternal static class GuardProbe\n{\n    publ
   > "$root/$probe_dir/GuardProbe.cs"
 run_hook "$win";                 check 0 $? "long in money code"
 
+# Ledger vocabulary in comments is not a floating-point type.
+printf 'namespace Payments.Api;\n\n/// <summary>Keeps the double-entry rules.</summary>\ninternal static class GuardProbe\n{\n    // Debits equal credits in double-entry bookkeeping.\n    public static long AmountMinor;\n}\n' \
+  > "$root/$probe_dir/GuardProbe.cs"
+run_hook "$win";                 check 0 $? "double-entry in comments"
+
+# float in code is still flagged, even with a comment on the same file.
+printf 'namespace Payments.Api;\n\n// rate\ninternal static class GuardProbe\n{\n    public static float Rate;\n}\n' \
+  > "$root/$probe_dir/GuardProbe.cs"
+run_hook "$win";                 check 2 $? "float in money code"
+
 # A double outside ledger/payments-api is not money code.
 printf 'class P { double x; }\n' > "$root/services/scoring/guard_probe.cs"
 run_hook "$(win_path services/scoring/guard_probe.cs)"; check 0 $? "double outside money code"
